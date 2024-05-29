@@ -23,7 +23,9 @@ i2cControllerLinux::~i2cControllerLinux() {
 }
 
 bool i2cControllerLinux::open() {
+#ifndef NDEBUG
     std::cout << __PRETTY_FUNCTION__ << std::endl;
+#endif
 
     i2cDevicePath = "/dev/i2c-" + std::to_string(bus());
 
@@ -42,7 +44,9 @@ bool i2cControllerLinux::open() {
 }
 
 void i2cControllerLinux::close() {
+#ifndef NDEBUG
     std::cout << __PRETTY_FUNCTION__ << std::endl;
+#endif
 
     if (fd > 0) {
         ::close(fd);
@@ -87,7 +91,7 @@ bool i2cControllerLinux::transceive(uint8_t address, i2c_operator *operations, s
     return false;
 }
 
-bool i2cControllerLinux::set_slave_address(uint8_t address) {
+bool i2cControllerLinux::set_slave_address(uint8_t address) const {
     bool result = false;
 
     if (ioctl(fd, I2C_SLAVE, (int) address) == 0) {

@@ -18,9 +18,7 @@ void test_transceive_read_eeprom(i2cController &i2c) {
     }
 }
 
-int main() {
-    std::cout << "Hello, World! Goodbye..." << std::endl;
-
+auto test1() {
     i2cController i2c(0);
 
     if (i2c.open()) {
@@ -36,6 +34,44 @@ int main() {
 
         test_transceive_read_eeprom(i2c);
     }
+}
+
+auto test2() {
+    i2cController i2c(1);
+    if (i2c.open()) {
+        std::cout << "OK" << std::endl;
+
+        auto value = i2c.read_register(0x77, 0xd0);
+
+        std::cout << "Device ID : " << std::hex << std::setw(2) << std::setfill('0') << (int) value << std::endl;
+    } else {
+        std::cerr << "Unable to open i2c device" << std::endl;
+    }
+}
+
+int main() {
+    std::cout << "Hello, World! Goodbye..." << std::endl;
+
+#if 1
+//    test1(); // test i2cdriver code running on host linux laptop
+    test2(); // test i2c device driver on the linux system
+#else
+    i2cController i2c(0);
+
+    if (i2c.open()) {
+        std::cout << "OK" << std::endl;
+
+        auto value = i2c.read_register(0x27, 0x00);
+
+        std::cout << "Value 0x00 : " << std::hex << std::setw(2) << std::setfill('0') << (int) value << std::endl;
+        value = i2c.read_register(0x27, 0x01);
+        std::cout << "Value 0x01 : " << std::hex << std::setw(2) << std::setfill('0') << (int) value << std::endl;
+
+        i2c.write_register(0x27, 0x01, 0x55);
+
+        test_transceive_read_eeprom(i2c);
+    }
+#endif
 
 //        i2cController i2c(0);
 //    if (controllers[0].open()) {

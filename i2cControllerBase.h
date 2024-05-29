@@ -7,6 +7,7 @@
 
 #include <cstddef>
 #include <string>
+#include <cstdint>
 
 enum class i2cOp {
     I2C_OPER_WRITE,

@@ -23,7 +23,7 @@ public:
 
 private:
 
-    bool set_slave_address(uint8_t address);
+    bool set_slave_address(uint8_t address) const;
 
     std::string i2cDevicePath;
     int fd = -1;
