@@ -52,30 +52,13 @@ auto test2() {
 int main() {
     std::cout << "Hello, World! Goodbye..." << std::endl;
 
-#if 1
-//    test1(); // test i2cdriver code running on host linux laptop
+#if defined(USE_I2CDRIVER)
+    test1(); // test i2cdriver code running on host linux laptop
+#elif defined(USE_LINUX)
     test2(); // test i2c device driver on the linux system
-#else
-    i2cController i2c(0);
-
-    if (i2c.open()) {
-        std::cout << "OK" << std::endl;
-
-        auto value = i2c.read_register(0x27, 0x00);
-
-        std::cout << "Value 0x00 : " << std::hex << std::setw(2) << std::setfill('0') << (int) value << std::endl;
-        value = i2c.read_register(0x27, 0x01);
-        std::cout << "Value 0x01 : " << std::hex << std::setw(2) << std::setfill('0') << (int) value << std::endl;
-
-        i2c.write_register(0x27, 0x01, 0x55);
-
-        test_transceive_read_eeprom(i2c);
-    }
+#elif defined(USE_PICO)
+    // TODO
 #endif
 
-//        i2cController i2c(0);
-//    if (controllers[0].open()) {
-//
-//    }
     return 0;
 }
