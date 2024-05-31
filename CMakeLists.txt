@@ -16,6 +16,8 @@ elseif ("${BUILD_TARGET}" STREQUAL "PICO")
     message("Building for RPI Pico...")
     include(pico/pico_sdk_import.cmake)
     pico_sdk_init()
+
+    list(APPEND I2CCONTROLLER_SRC i2cControllerPico.h i2cControllerPico.cpp)
 else ()
     message(FATAL_ERROR "Invalid build type")
 endif ()

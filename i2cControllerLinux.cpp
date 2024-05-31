@@ -102,3 +102,11 @@ bool i2cControllerLinux::set_slave_address(uint8_t address) const {
 
     return result;
 }
+
+std::vector<uint8_t> i2cControllerLinux::scan_bus() {
+    return {};
+}
+
+std::string i2cControllerLinux::info() const {
+    return {};
+}

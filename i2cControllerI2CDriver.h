@@ -27,6 +27,10 @@ public:
 
     bool transceive(uint8_t address, i2c_operator operations[], size_t len) override;
 
+    [[nodiscard]] std::vector<uint8_t> scan_bus() override;
+
+    [[nodiscard]] std::string info() const override;
+
 private:
     [[nodiscard]] std::string getI2cSerialPortFromBus() const;
 

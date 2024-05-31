@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <string>
 #include <cstdint>
+#include <vector>
 
 enum class i2cOp {
     I2C_OPER_WRITE,
@@ -38,12 +39,20 @@ public:
 
     virtual bool transceive(uint8_t address, i2c_operator operations[], size_t len) = 0;
 
+    [[nodiscard]] virtual std::vector<uint8_t> scan_bus() = 0;
+
+    /**
+     * Get driver information string.
+     * @return
+     */
+    [[nodiscard]] virtual std::string info() const = 0;
 
     inline uint8_t bus() const { return (uint8_t) busNo; }
 
 
 private:
     int8_t busNo = -1;
+    uint16_t bitRate = (uint16_t) (100 * 1000);
 };
 
 #endif //I2CCONTROLLER_I2CCONTROLLERBASE_H
