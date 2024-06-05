@@ -5,7 +5,7 @@
 
 class i2cControllerLinux : i2cControllerBase {
 public:
-    explicit i2cControllerLinux(uint8_t busNo, void *data = nullptr);
+    explicit i2cControllerLinux(uint8_t busNo, unsigned int bitrate = DEFAULT_BITRATE, void *data = nullptr);
 
     ~i2cControllerLinux() override;
 

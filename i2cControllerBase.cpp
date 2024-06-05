@@ -4,7 +4,7 @@
 
 #include "i2cControllerBase.h"
 
-i2cControllerBase::i2cControllerBase(uint8_t bus) : busNo((int8_t) bus) {
+i2cControllerBase::i2cControllerBase(uint8_t bus, unsigned int bitrate) : busNo((int8_t) bus), bitRate(bitrate) {
 
 }
 

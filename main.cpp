@@ -65,41 +65,132 @@ auto test2() {
 
 #ifdef USE_PICO
 
-auto test3() {
+[[noreturn]] void test3() {
     i2cConfig cfg = {i2c0, 4, 5};
     i2cController i2c(0, &cfg);
 
     if (i2c.open()) {
         std::cout << "Open ok" << std::endl;
+        std::cout << i2c.info() << std::endl;
+        std::cout << "Scanning bus..." << std::endl;
 
-        auto value = i2c.read_register(0x27, 0x00);
+        auto devList = i2c.scan_bus();
+        for (const auto &dev: devList) {
+            std::cout << "Found device id : 0x" << std::hex << std::setw(2) << std::setfill('0') << (int) dev
+                      << std::endl;
+        }
 
-        std::cout << "Value 0x00 : " << std::hex << std::setw(2) << std::setfill('0') << (int) value << std::endl;
-        value = i2c.read_register(0x27, 0x01);
-        std::cout << "Value 0x01 : " << std::hex << std::setw(2) << std::setfill('0') << (int) value << std::endl;
+        i2c.write_register(0x27, 0x01, 0xaa);
+
+        while (true) {
+            auto value = i2c.read_register(0x27, 0x00);
+
+            std::cout << "Value 0x00 : " << std::hex << std::setw(2) << std::setfill('0') << (int) value << std::endl;
+            value = i2c.read_register(0x27, 0x01);
+            std::cout << "Value 0x01 : " << std::hex << std::setw(2) << std::setfill('0') << (int) value << std::endl;
+        }
+    } else {
+        std::cout << "Unable to open i2c device." << std::endl;
+        while (true) {
+            tight_loop_contents();
+        }
     }
 }
 
 #endif
 
+void poll_bme280(i2cController &i2c) {
+    auto value = i2c.read_register(0x77, 0xd0);
+    std::cout << "Device ID : " << std::hex << std::setw(2) << std::setfill('0') << (int) value << std::endl;
+}
 
-int main() {
-    std::cout << "I2CController test suite" << std::endl;
+void poll_mcp2317(i2cController &i2c) {
+    auto value = i2c.read_register(0x27, 0x00);
+
+    std::cout << "Value 0x00 : " << std::hex << std::setw(2) << std::setfill('0') << (int) value << std::endl;
+    value = i2c.read_register(0x27, 0x01);
+    std::cout << "Value 0x01 : " << std::hex << std::setw(2) << std::setfill('0') << (int) value << std::endl;
+
+    i2c.write_register(0x27, 0x01, 0x55);
+}
+
+void poll_eeprom(i2cController &i2c) {
+    test_transceive_read_eeprom(i2c);
+}
+
+#if defined(USE_PICO)
+
+[[noreturn]] void run() {
+#else
+
+void run() {
+#endif
+    std::cout << "Running main loop" << std::endl;
 
 #if defined(USE_I2CDRIVER)
-    test1(); // test i2cdriver code running on host linux laptop
+    i2cController i2c(0, DEFAULT_BITRATE, nullptr);
 #elif defined(USE_LINUX)
-    test2(); // test i2c device driver on the linux system
+    i2cController i2c(1, DEFAULT_BITRATE, nullptr);
 #elif defined(USE_PICO)
-    stdio_init_all();
+    i2cConfig cfg = {i2c0, 4, 5};
+    i2cController i2c(0, &cfg);
+#endif
 
-    while (true) {
-        test3();
-        sleep_ms(100);
+    if (i2c.open()) {
+        std::cout << "i2cController opened!" << std::endl;
+
+        std::cout << i2c.info() << std::endl;
+        std::cout << "Scanning bus..." << std::endl;
+
+        auto devList = i2c.scan_bus();
+        for (const auto &dev: devList) {
+            std::cout << "Found device id : 0x" << std::hex << std::setw(2) << std::setfill('0') << (int) dev
+                      << std::endl;
+
+            switch (dev) {
+                case 0x77:
+                    poll_bme280(i2c);
+                    break;
+                case 0x27:
+                    poll_mcp2317(i2c);
+                    break;
+                case 0x50:
+                    poll_eeprom(i2c);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+    } else {
+        std::cout << "Unable to open i2c controller" << std::endl;
     }
 
-    // TODO
+#if defined(USE_PICO)
+    while (true) {
+        tight_loop_contents();
+    }
 #endif
+
+}
+
+int main() {
+#ifdef USE_PICO
+    stdio_init_all();
+#endif
+
+    std::cout << "I2CController test suite" << std::endl;
+
+//#if defined(USE_I2CDRIVER)
+//    test1(); // test i2cdriver code running on host linux laptop
+//#elif defined(USE_LINUX)
+//    test2(); // test i2c device driver on the linux system
+//#elif defined(USE_PICO)
+////    stdio_init_all();
+//    test3();
+//#endif
+
+    run();
 
     return 0;
 }

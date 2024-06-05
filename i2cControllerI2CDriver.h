@@ -11,7 +11,7 @@ extern "C" {
 
 class i2cControllerI2CDriver : public i2cControllerBase {
 public:
-    explicit i2cControllerI2CDriver(uint8_t busNo, void *data = nullptr);
+    explicit i2cControllerI2CDriver(uint8_t busNo, unsigned int bitrate = DEFAULT_BITRATE, void *data = nullptr);
 
     virtual ~i2cControllerI2CDriver();
 

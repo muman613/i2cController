@@ -21,9 +21,22 @@ struct i2c_operator {
     uint8_t len;
 };
 
+#if defined(USE_PICO) || defined(USE_I2CDRIVER)
+#define DEFAULT_BITRATE ((unsigned int)(100 * 1000))
+#elif defined(USE_LINUX)
+#define DEFAULT_BITRATE ((unsigned int)(400 * 1000))
+#endif
+
+
 class i2cControllerBase {
 public:
-    explicit i2cControllerBase(uint8_t bus);
+    /**
+     * i2cController constructor.
+     *
+     * @param bus i2c bus # (used on Linux and i2cDriver)
+     * @param bitrate i2c bit rate in KBps.
+     */
+    explicit i2cControllerBase(uint8_t bus, unsigned int bitrate = DEFAULT_BITRATE);
 
     virtual ~i2cControllerBase();
 
@@ -47,12 +60,13 @@ public:
      */
     [[nodiscard]] virtual std::string info() const = 0;
 
-    inline uint8_t bus() const { return (uint8_t) busNo; }
+    [[nodiscard]] inline uint8_t bus() const { return (uint8_t) busNo; }
 
+    [[nodiscard]] inline unsigned int bitrate() const { return bitRate; }
 
 private:
     int8_t busNo = -1;
-    uint16_t bitRate = (uint16_t) (100 * 1000);
+    unsigned int bitRate = DEFAULT_BITRATE;
 };
 
 #endif //I2CCONTROLLER_I2CCONTROLLERBASE_H

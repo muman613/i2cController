@@ -14,7 +14,8 @@ extern "C" {
 }
 namespace fs = std::filesystem;
 
-i2cControllerLinux::i2cControllerLinux(uint8_t busNo, void *data) : i2cControllerBase(busNo) {
+i2cControllerLinux::i2cControllerLinux(uint8_t busNo, unsigned int bitrate, void *data) : i2cControllerBase(busNo,
+                                                                                                            bitrate) {
 
 }
 
@@ -23,9 +24,12 @@ i2cControllerLinux::~i2cControllerLinux() {
 }
 
 bool i2cControllerLinux::open() {
+    if (bitrate() != DEFAULT_BITRATE) {
 #ifndef NDEBUG
-    std::cout << __PRETTY_FUNCTION__ << std::endl;
+        std::cerr << "Unable to change bitrate to " << bitrate() << std::endl;
 #endif
+        return false;
+    }
 
     i2cDevicePath = "/dev/i2c-" + std::to_string(bus());
 
@@ -34,20 +38,21 @@ bool i2cControllerLinux::open() {
         if (fd > 0) {
             connected = true;
         } else {
+#ifndef NDEBUG
             std::cerr << "Unable to open i2c driver : " << strerror(errno) << std::endl;
+#endif
         }
     } else {
+#ifndef NDEBUG
         std::cerr << "Invalid i2c driver, no device on bus " << bus() << std::endl;
+#endif
     }
+
 
     return connected;
 }
 
 void i2cControllerLinux::close() {
-#ifndef NDEBUG
-    std::cout << __PRETTY_FUNCTION__ << std::endl;
-#endif
-
     if (fd > 0) {
         ::close(fd);
         fd = -1;
@@ -88,7 +93,29 @@ void i2cControllerLinux::write_register(uint8_t address, uint8_t reg, uint8_t va
 }
 
 bool i2cControllerLinux::transceive(uint8_t address, i2c_operator *operations, size_t len) {
-    return false;
+    // Translate input operations to i2c_msg structures
+    std::vector<i2c_msg> msgs;
+    for (size_t i = 0; i < len; ++i) {
+        i2c_msg msg{};
+        std::memset(&msg, 0, sizeof(msg));
+        msg.addr = address;
+        msg.flags = (operations[i].op == i2cOp::I2C_OPER_READ) ? I2C_M_RD : 0;
+        msg.len = operations[i].len;
+        msg.buf = operations[i].data;
+        msgs.push_back(msg);
+    }
+
+    // Create i2c_rdwr_ioctl_data structure
+    i2c_rdwr_ioctl_data ioctl_data{};
+
+    ioctl_data.msgs = msgs.data();
+    ioctl_data.nmsgs = msgs.size();
+
+    if (ioctl(fd, I2C_RDWR, &ioctl_data) < 0) {
+        return false;
+    }
+
+    return true;
 }
 
 bool i2cControllerLinux::set_slave_address(uint8_t address) const {
@@ -104,9 +131,29 @@ bool i2cControllerLinux::set_slave_address(uint8_t address) const {
 }
 
 std::vector<uint8_t> i2cControllerLinux::scan_bus() {
-    return {};
+    std::vector<uint8_t> devList;
+
+    int first = 0x03, last = 0x77;
+    int res;
+
+    for (int devId = first; devId <= last; devId++) {
+        // Do not include devices whose I2C interface is controlled by device driver (UU)
+        if (ioctl(fd, I2C_SLAVE, devId) < 0) {
+            continue;
+        }
+        res = i2c_smbus_read_byte(fd);
+        if (res >= 0) {
+            devList.push_back(devId);
+        }
+    }
+    return devList;
 }
 
 std::string i2cControllerLinux::info() const {
-    return {};
+    std::ostringstream oss;
+
+    oss << "i2cController       : i2cControllerLinux" << std::endl;
+    oss << "i2cControllerLinux  : bus " << (int) bus();
+
+    return oss.str();
 }

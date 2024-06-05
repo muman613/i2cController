@@ -2,14 +2,12 @@
 #include <iostream>
 #include <sstream>
 #include "utilities.h"
-#include <iostream>
-#include <sstream>
 #include <cstdio>
 #include <cstring>
 #include <unistd.h>
 
-i2cControllerI2CDriver::i2cControllerI2CDriver(uint8_t bus, void *data) : i2cControllerBase(bus) {
-
+i2cControllerI2CDriver::i2cControllerI2CDriver(uint8_t bus, unsigned int bitrate, void *data)
+        : i2cControllerBase(bus, bitrate) {
 }
 
 i2cControllerI2CDriver::~i2cControllerI2CDriver() {
@@ -18,13 +16,17 @@ i2cControllerI2CDriver::~i2cControllerI2CDriver() {
 
 bool i2cControllerI2CDriver::open() {
     serialPort = getI2cSerialPortFromBus();
-    i2c_connect(&i2c_driver, serialPort.c_str());
+    ::i2c_connect(&i2c_driver, serialPort.c_str());
     if (i2c_driver.connected != 1) {
         std::cerr << "Unable to open i2cdriver..." << std::endl;
         return false;
     }
 
-//    displayControllerInfo();
+    // Set the baudrate for the i2cDriver (specified in kHz)
+    if (!::i2c_setbaud(&i2c_driver, bitrate() / 1000)) {
+        std::cerr << "Unable to set baudrate" << std::endl;
+        return false;
+    }
 
     return true;
 }
@@ -181,6 +183,7 @@ std::string i2cControllerI2CDriver::info() const {
     oss << "i2cController : i2cDriver" << std::endl;
     oss << "i2cDriver     : " << i2c_driver.model << " - " << i2c_driver.serial << std::endl;
     oss << "i2cDriver     : " << i2c_driver.voltage_v << "V " << i2c_driver.current_ma << "mA" << std::endl;
+    oss << "i2cDriver     : " << i2c_driver.speed << "KBps SDA = " << i2c_driver.sda << " SCL = " << i2c_driver.scl;
 
     return oss.str();
 }

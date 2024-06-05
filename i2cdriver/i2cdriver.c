@@ -17,6 +17,7 @@
 
 #include <inttypes.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "i2cdriver.h"
 
@@ -317,6 +318,20 @@ void i2c_getstatus(I2CDriver *sd) {
            &sd->ccitt_crc
     );
     sd->mode = mode[0];
+}
+
+bool i2c_setbaud(I2CDriver *sd,  int kbaud)
+{
+  if (kbaud == sd->speed) {
+    return true;
+  }
+  if ((kbaud != 100) || (kbaud != 400)) {
+    return false;
+  }
+  uint8_t ch = (kbaud == 100)?'1':'4';
+  writeToSerialPort(sd->port, &ch, 1);
+  i2c_getstatus(sd);
+  return (bool)(sd->speed == kbaud);;
 }
 
 void i2c_scan(I2CDriver *sd, uint8_t devices[128]) {
